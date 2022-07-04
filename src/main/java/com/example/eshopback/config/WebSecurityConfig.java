@@ -45,7 +45,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
                 .addFilter(new JwtUsernameAndPasswordAuthenticationFilter(authenticationManager(),objectMapper, tokenService))
                 .addFilterAfter(new JwtTokenVerifier(secretKey, HttpHeaders.AUTHORIZATION, tokenPrefix),JwtUsernameAndPasswordAuthenticationFilter.class)
                 .authorizeRequests()
-//                .antMatchers("/api/v1/registration/**").permitAll()
+                .antMatchers("/api/main").permitAll()
                 .anyRequest()
                 .authenticated();
     }

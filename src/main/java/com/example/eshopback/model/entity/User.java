@@ -38,6 +38,7 @@ public class User implements UserDetails {
     private Boolean isCredentialsNonExpired = true;
     @Builder.Default
     private Boolean isEnabled = true;
+    @Enumerated(EnumType.STRING)
     private Role role;
 
     @Override
