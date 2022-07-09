@@ -28,6 +28,7 @@ public class AppRunner implements ApplicationRunner {
         if (adminOptional.isPresent()) return;
 
         User user = User.builder()
+                .id(1L)
                 .firstName("Admin")
                 .lastName("Admin")
                 .role(Role.MANAGER)

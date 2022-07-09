@@ -17,6 +17,6 @@ public class AdviceController extends ResponseEntityExceptionHandler {
         return new ResponseEntity<>(ErrorBody.builder()
                 .message(exception.getMessage())
                 .status(exception.getStatus())
-                .timeline(exception.getTimeline()), exception.getStatus());
+                .timeline(exception.getTimeline()).build(), exception.getStatus());
     }
 }

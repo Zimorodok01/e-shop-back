@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter@Setter
-public class UsernameAndPasswordAuthenticationRequest {
+public class AuthenticatedUser {
     private String username;
     private String password;
 }
