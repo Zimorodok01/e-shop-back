@@ -1,11 +1,15 @@
 package com.example.eshopback.model.entity;
 
+import com.example.eshopback.model.entity.audit.AuditModel;
+import com.example.eshopback.model.enums.Role;
 import lombok.*;
+import org.hibernate.Hibernate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import java.util.Collection;
+import java.util.Objects;
 
 @Entity
 @AllArgsConstructor
@@ -13,7 +17,7 @@ import java.util.Collection;
 @NoArgsConstructor
 @Builder()
 @Table(name = "users")
-public class User implements UserDetails {
+public class User extends AuditModel implements UserDetails {
     @Id
     @SequenceGenerator(
             name = "user_sequence",
@@ -40,6 +44,10 @@ public class User implements UserDetails {
     private Boolean isEnabled = true;
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sales_point_id")
+    private SalesPoint salesPoint;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -69,5 +77,18 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() {
         return isEnabled;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
+        User user = (User) o;
+        return id != null && Objects.equals(id, user.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

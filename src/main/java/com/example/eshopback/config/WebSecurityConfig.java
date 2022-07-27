@@ -43,9 +43,10 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .addFilter(new JwtUsernameAndPasswordAuthenticationFilter(authenticationManager(),objectMapper, tokenService))
-                .addFilterAfter(new JwtTokenVerifier(secretKey, HttpHeaders.AUTHORIZATION, tokenPrefix),JwtUsernameAndPasswordAuthenticationFilter.class)
+                .addFilterAfter(new JwtTokenVerifier(secretKey, HttpHeaders.AUTHORIZATION, tokenPrefix, objectMapper),JwtUsernameAndPasswordAuthenticationFilter.class)
                 .authorizeRequests()
                 .antMatchers("/api/main").permitAll()
+                .antMatchers("/api/laravel").permitAll()
                 .anyRequest()
                 .authenticated();
     }

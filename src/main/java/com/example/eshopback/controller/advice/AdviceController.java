@@ -11,7 +11,7 @@ import java.util.Date;
 
 @ControllerAdvice
 public class AdviceController extends ResponseEntityExceptionHandler {
-    @ExceptionHandler(value = {ErrorException.class})
+    @ExceptionHandler(value = {Exception.class})
     public ResponseEntity<?> buildErrorResponse(ErrorException exception) {
         exception.setTimeline(new Date());
         return new ResponseEntity<>(ErrorBody.builder()

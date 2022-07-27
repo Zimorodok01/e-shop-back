@@ -7,4 +7,6 @@ import java.util.Collection;
 
 public interface TokenService {
     TokenResponse getAccessToken(String name, Collection<? extends GrantedAuthority> authorities);
+
+    String getUsername(String authorization);
 }

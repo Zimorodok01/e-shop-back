@@ -1,6 +1,6 @@
 package com.example.eshopback.config;
 
-import com.example.eshopback.model.entity.Role;
+import com.example.eshopback.model.enums.Role;
 import com.example.eshopback.model.entity.User;
 import com.example.eshopback.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,14 +17,15 @@ public class AppRunner implements ApplicationRunner {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-
     @Override
     public void run(ApplicationArguments args) {
         addUser();
     }
 
     private void addUser() {
-        Optional<User> adminOptional = userRepository.findByUsername("admin");
+        Optional<User> adminOptional =
+                userRepository.findByUsername("admin");
+
         if (adminOptional.isPresent()) return;
 
         User user = User.builder()

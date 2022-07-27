@@ -35,7 +35,6 @@ public class JwtUsernameAndPasswordAuthenticationFilter extends UsernamePassword
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request,
                                                 HttpServletResponse response) throws AuthenticationException {
-
         try {
             AuthenticatedUser authenticationRequest =
                     new ObjectMapper().readValue(request.getInputStream(),

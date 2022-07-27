@@ -1,5 +1,8 @@
 package com.example.eshopback.security;
 
+import com.example.eshopback.model.exception.ErrorBody;
+import com.example.eshopback.model.exception.ErrorException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
@@ -19,23 +22,42 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.*;
 
 @RequiredArgsConstructor
 public class JwtTokenVerifier extends OncePerRequestFilter {
     private final SecretKey secretKey;
     private final String authorizationHeader;
     private final String tokenPrefix;
+    private final ObjectMapper objectMapper;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String authorizationHeader = request
                 .getHeader(this.authorizationHeader);
+
+        if (authorizationHeader == null) {
+            ErrorBody exception = ErrorBody.builder()
+                    .status(UNAUTHORIZED)
+                    .message("Вы не авторизовались. Для выполнение этого действие нужно авторизация")
+                    .timeline(new Date())
+                    .build();
+
+            response.setContentType("application/json");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getOutputStream().write(objectMapper.writeValueAsString(exception).getBytes(StandardCharsets.UTF_8));
+            response.getOutputStream().flush();
+
+            filterChain.doFilter(request,response);
+            return;
+        }
 
         if (Strings.isNullOrEmpty(authorizationHeader) ||
                 !authorizationHeader.startsWith(tokenPrefix)) {
@@ -70,13 +92,16 @@ public class JwtTokenVerifier extends OncePerRequestFilter {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (JwtException e) {
-            ResponseStatusException responseStatusException = new ResponseStatusException(
-                    BAD_REQUEST,
-                    String.format("Token %s cannot be trusted", token));
+            ErrorBody exception = ErrorBody.builder()
+                    .status(INTERNAL_SERVER_ERROR)
+                    .message("Что-то полшо не так во время получение токена")
+                    .timeline(new Date())
+                    .build();
+
             response.setContentType("application/json");
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getOutputStream()
-                    .println("{ \"error\": \"" + responseStatusException.getMessage() + "\" }");
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.getOutputStream().write(objectMapper.writeValueAsString(exception).getBytes(StandardCharsets.UTF_8));
+            response.getOutputStream().flush();
         }
 
         filterChain.doFilter(request,response);
