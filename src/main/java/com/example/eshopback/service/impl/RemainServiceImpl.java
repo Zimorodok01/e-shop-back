@@ -1,20 +1,20 @@
 package com.example.eshopback.service.impl;
 
-import com.example.eshopback.model.entity.Product;
-import com.example.eshopback.model.entity.Remain;
-import com.example.eshopback.model.entity.SalesPoint;
-import com.example.eshopback.model.entity.Supply;
+import com.example.eshopback.model.entity.*;
 import com.example.eshopback.model.exception.ErrorException;
 import com.example.eshopback.model.request.PositionRequest;
+import com.example.eshopback.model.response.RemainResponse;
 import com.example.eshopback.repository.RemainRepository;
 import com.example.eshopback.service.ProductService;
 import com.example.eshopback.service.RemainService;
 import com.example.eshopback.service.SalesPointService;
+import com.example.eshopback.service.WriteOffService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.I_AM_A_TEAPOT;
 
@@ -24,6 +24,7 @@ public class RemainServiceImpl implements RemainService {
     private final RemainRepository remainRepository;
     private final ProductService productService;
     private final SalesPointService salesPointService;
+    private final WriteOffService writeOffService;
 
     private final String NO_PRODUCT_IN_STOCK = "%s нету в складе";
     private final String DOES_NOT_HAVE_ENOUGH = "%s не хватает в складе";
@@ -46,6 +47,14 @@ public class RemainServiceImpl implements RemainService {
             Remain remain = getRemainByProductAndSalesPoint(positionRequest.getProduct(), salesPoint);;
             remain.setAmount(remain.getAmount() - positionRequest.getAmount());
             remainRepository.save(remain);
+
+            WriteOff writeOff = WriteOff.builder()
+                    .productName(remain.getProduct().getName())
+                    .amount(positionRequest.getAmount())
+                    .product(remain.getProduct())
+                    .salesPoint(salesPoint)
+                    .build();
+            writeOffService.save(writeOff);
         }
     }
 
@@ -95,5 +104,34 @@ public class RemainServiceImpl implements RemainService {
         }
 
         remainRepository.save(remain);
+    }
+
+    @Override
+    public List<RemainResponse> getRemains(Long salesPointId) {
+        SalesPoint salesPoint = salesPointService.getSalesPoint(salesPointId);
+        List<Remain> remains =
+                remainRepository.findBySalesPointAndDeletedAtNull(salesPoint);
+        return remains.parallelStream().map(remain -> RemainResponse.builder()
+                        .productName(remain.getProduct().getName())
+                        .productType(remain.getProduct().getType())
+                        .amount(remain.getAmount())
+                        .productPrice(remain.getProduct().getPrice())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<RemainResponse> getRemainsByProductName(String productName, Long salesPointId) {
+        List<Product> products = productService.getProductsByName(productName);
+        SalesPoint salesPoint = salesPointService.getSalesPoint(salesPointId);
+        List<Remain> remains =
+                remainRepository.findBySalesPointAndProductInAndDeletedAtNull(salesPoint, products);
+        return remains.parallelStream().map(remain -> RemainResponse.builder()
+                        .productName(remain.getProduct().getName())
+                        .productType(remain.getProduct().getType())
+                        .amount(remain.getAmount())
+                        .productPrice(remain.getProduct().getPrice())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

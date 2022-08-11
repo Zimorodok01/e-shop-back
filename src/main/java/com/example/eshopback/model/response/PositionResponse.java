@@ -1,14 +1,15 @@
 package com.example.eshopback.model.response;
 
 import com.example.eshopback.model.enums.ProductType;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 @Getter@Setter
-public class ProductResponse {
-    private Long id;
-    private String name;
+@Builder
+public class PositionResponse {
+    private String productName;
     private double price;
-    private ProductType type;
-    private String url;
+    private int amount;
+    private ProductType productType;
 }

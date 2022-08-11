@@ -11,4 +11,6 @@ public interface ProductService {
     List<Product> getProducts();
 
     Product getProduct(Long product);
+
+    List<Product> getProductsByName(String productName);
 }

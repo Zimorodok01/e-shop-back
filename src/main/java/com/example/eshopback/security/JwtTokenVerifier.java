@@ -1,7 +1,12 @@
 package com.example.eshopback.security;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.example.eshopback.model.entity.User;
 import com.example.eshopback.model.exception.ErrorBody;
 import com.example.eshopback.model.exception.ErrorException;
+import com.example.eshopback.model.request.AuthenticatedUser;
+import com.example.eshopback.service.TokenService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import io.jsonwebtoken.Claims;
@@ -9,10 +14,14 @@ import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -23,10 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.*;
@@ -37,6 +43,9 @@ public class JwtTokenVerifier extends OncePerRequestFilter {
     private final String authorizationHeader;
     private final String tokenPrefix;
     private final ObjectMapper objectMapper;
+    private final AuthenticationManager authenticationManager;
+    private final TokenService tokenService;
+    private final UserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -55,8 +64,7 @@ public class JwtTokenVerifier extends OncePerRequestFilter {
             response.getOutputStream().write(objectMapper.writeValueAsString(exception).getBytes(StandardCharsets.UTF_8));
             response.getOutputStream().flush();
 
-            filterChain.doFilter(request,response);
-            return;
+            filterChain.doFilter(request, response);
         }
 
         if (Strings.isNullOrEmpty(authorizationHeader) ||
@@ -68,6 +76,20 @@ public class JwtTokenVerifier extends OncePerRequestFilter {
         String token = authorizationHeader.replace(tokenPrefix, "");
 
         try {
+            DecodedJWT decoderToken = JWT.decode(token);
+            if (decoderToken.getExpiresAt().before(new Date())) {
+                ErrorBody exception = ErrorBody.builder()
+                        .status(FORBIDDEN)
+                        .message("Время токена истек. Заново авторизуйтесь")
+                        .timeline(new Date())
+                        .build();
+
+                response.setContentType("application/json");
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                response.getOutputStream().write(objectMapper.writeValueAsString(exception).getBytes(StandardCharsets.UTF_8));
+                response.getOutputStream().flush();
+                return;
+            }
 
             Jws<Claims> claimsJws = Jwts.parser()
                     .setSigningKey(secretKey)
@@ -102,8 +124,23 @@ public class JwtTokenVerifier extends OncePerRequestFilter {
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             response.getOutputStream().write(objectMapper.writeValueAsString(exception).getBytes(StandardCharsets.UTF_8));
             response.getOutputStream().flush();
+        } catch (AccessDeniedException e) {
+            ErrorBody exception = ErrorBody.builder()
+                    .status(FORBIDDEN)
+                    .message("Access denied")
+                    .timeline(new Date())
+                    .build();
+
+            response.setContentType("application/json");
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.getOutputStream().write(objectMapper.writeValueAsString(exception).getBytes(StandardCharsets.UTF_8));
+            response.getOutputStream().flush();
         }
 
-        filterChain.doFilter(request,response);
+        try {
+            filterChain.doFilter(request,response);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

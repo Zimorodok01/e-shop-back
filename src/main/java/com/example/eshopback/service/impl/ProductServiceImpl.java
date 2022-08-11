@@ -24,6 +24,7 @@ public class ProductServiceImpl implements ProductService {
                 .name(productRequest.getProductName())
                 .type(productRequest.getProductType())
                 .price(productRequest.getPrice())
+                .url(productRequest.getUrl())
                 .build();
 
         return productRepository.save(product);
@@ -42,5 +43,10 @@ public class ProductServiceImpl implements ProductService {
                         .message(PRODUCT_DOES_NOT_EXIST)
                         .build()
         );
+    }
+
+    @Override
+    public List<Product> getProductsByName(String productName) {
+        return productRepository.findByNameAndDeletedAtNull(productName);
     }
 }

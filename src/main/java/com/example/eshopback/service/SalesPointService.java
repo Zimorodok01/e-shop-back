@@ -11,4 +11,9 @@ public interface SalesPointService {
     List<SalesPoint> getSalesPoints();
 
     SalesPoint getSalesPoint(Long salesPoint);
+
+    SalesPoint openShift(Long salesPointId);
+
+    SalesPoint closeShift(Long salesPointId);
+
 }

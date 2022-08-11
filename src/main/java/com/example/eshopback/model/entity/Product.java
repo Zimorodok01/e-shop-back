@@ -22,4 +22,5 @@ public class Product extends AuditModel {
     private double price;
     @Enumerated(EnumType.STRING)
     private ProductType type;
+    private String url;
 }

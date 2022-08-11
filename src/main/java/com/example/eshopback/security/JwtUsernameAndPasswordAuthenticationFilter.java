@@ -6,6 +6,7 @@ import com.example.eshopback.model.response.TokenResponse;
 import com.example.eshopback.service.TokenService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -26,6 +27,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @RequiredArgsConstructor
+@Slf4j
+//Java     Spring boot
 public class JwtUsernameAndPasswordAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     private final AuthenticationManager authenticationManager;
     private final ObjectMapper objectMapper;
@@ -35,6 +38,7 @@ public class JwtUsernameAndPasswordAuthenticationFilter extends UsernamePassword
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request,
                                                 HttpServletResponse response) throws AuthenticationException {
+        log.info("AUTHORIZATION");
         try {
             AuthenticatedUser authenticationRequest =
                     new ObjectMapper().readValue(request.getInputStream(),

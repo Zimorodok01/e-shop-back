@@ -9,4 +9,5 @@ public class ProductRequest {
     private String productName;
     private ProductType productType;
     private double price;
+    private String url;
 }

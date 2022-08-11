@@ -3,6 +3,7 @@ package com.example.eshopback.controller;
 import com.example.eshopback.model.entity.Product;
 import com.example.eshopback.model.request.ProductRequest;
 import com.example.eshopback.model.response.ProductResponse;
+import com.example.eshopback.model.response.SuccessResponse;
 import com.example.eshopback.service.ProductService;
 import com.example.eshopback.service.RemainService;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,6 @@ public class ProductController {
     public ResponseEntity<?> addProduct(@RequestBody ProductRequest productRequest) {
         Product product = productService.addProduct(productRequest);
         remainService.addProduct(product);
-        return ResponseEntity.ok("Продукт создан");
+        return ResponseEntity.ok(new SuccessResponse("Продукт создан"));
     }
 }

@@ -4,6 +4,7 @@ import com.example.eshopback.model.entity.Product;
 import com.example.eshopback.model.entity.SalesPoint;
 import com.example.eshopback.model.entity.Supply;
 import com.example.eshopback.model.request.PositionRequest;
+import com.example.eshopback.model.response.RemainResponse;
 
 import java.util.List;
 
@@ -15,4 +16,8 @@ public interface RemainService {
     void addProduct(Product product);
 
     void getRemainBySalesPointAndProduct(Supply supply);
+
+    List<RemainResponse> getRemains(Long salesPointId);
+
+    List<RemainResponse> getRemainsByProductName(String productName, Long salesPoint);
 }

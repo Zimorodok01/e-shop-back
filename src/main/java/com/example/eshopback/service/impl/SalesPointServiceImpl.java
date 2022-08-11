@@ -8,6 +8,12 @@ import com.example.eshopback.repository.SalesPointRepository;
 import com.example.eshopback.service.SalesPointService;
 import com.example.eshopback.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -53,5 +59,19 @@ public class SalesPointServiceImpl implements SalesPointService {
                         .message(SALES_POINT_DOES_NOT_EXIST)
                         .build()
         );
+    }
+
+    @Override
+    public SalesPoint openShift(Long salesPointId) {
+        SalesPoint salesPoint = getSalesPoint(salesPointId);
+        salesPoint.setOpened(true);
+        return salesPointRepository.save(salesPoint);
+    }
+
+    @Override
+    public SalesPoint closeShift(Long salesPointId) {
+        SalesPoint salesPoint = getSalesPoint(salesPointId);
+        salesPoint.setOpened(false);
+        return salesPointRepository.save(salesPoint);
     }
 }

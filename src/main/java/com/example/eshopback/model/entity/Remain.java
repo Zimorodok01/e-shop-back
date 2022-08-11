@@ -11,8 +11,7 @@ import javax.persistence.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "product_remains")
-//public class Remain extends AuditModel {
-public class Remain {
+public class Remain extends AuditModel {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "remain_seq")
     @SequenceGenerator(name = "remain_seq", sequenceName = "remain_seq", allocationSize = 1)

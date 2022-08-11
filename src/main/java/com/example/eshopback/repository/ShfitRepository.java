@@ -9,4 +9,6 @@ import java.util.Optional;
 public interface ShfitRepository extends JpaRepository<Shift, Long> {
     Optional<Shift> findBySalesPointAndClosedAtNull(SalesPoint salesPoint);
 
+    Optional<Shift> findFirstBySalesPointAndClosedAtNullOrderByCreatedAtDesc(SalesPoint salesPoint);
+
 }

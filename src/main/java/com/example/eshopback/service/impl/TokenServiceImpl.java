@@ -1,31 +1,31 @@
 package com.example.eshopback.service.impl;
 
-import com.example.eshopback.model.exception.ErrorBody;
+import com.example.eshopback.model.entity.User;
 import com.example.eshopback.model.exception.ErrorException;
+import com.example.eshopback.model.request.AuthenticatedUser;
 import com.example.eshopback.model.response.TokenResponse;
 import com.example.eshopback.service.TokenService;
-import com.google.common.base.Strings;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import javax.servlet.http.HttpServletResponse;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Service
 @RequiredArgsConstructor
@@ -77,5 +77,10 @@ public class TokenServiceImpl implements TokenService {
                     .timeline(new Date())
                     .build();
         }
+    }
+
+    @Override
+    public TokenResponse getToken(User user) {
+        return getAccessToken(user.getUsername(), user.getAuthorities());
     }
 }

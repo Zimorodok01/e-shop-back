@@ -5,6 +5,7 @@ import com.example.eshopback.model.request.UserRequest;
 import com.example.eshopback.model.response.UserResponse;
 import com.example.eshopback.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +16,7 @@ import static org.springframework.http.ResponseEntity.ok;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/users")
+@Slf4j
 public class UserController {
     private final UserService userService;
     private final ModelMapper modelMapper;
@@ -36,6 +38,9 @@ public class UserController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/userInfo")
     public ResponseEntity<UserResponse> userInfo(@RequestHeader("Authorization") String authorization) {
-        return ok(userService.getUserInfo(authorization));
+        System.out.println("/userInfo");
+        UserResponse userInfo = userService.getUserInfo(authorization);
+        log.info("userInfo" + userInfo);
+        return ok(userInfo);
     }
 }

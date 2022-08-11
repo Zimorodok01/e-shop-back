@@ -11,6 +11,10 @@ import com.example.eshopback.service.TokenService;
 import com.example.eshopback.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -29,7 +33,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
     private final ModelMapper modelMapper;
-    private final ShiftService shiftService;
 
     private final String USERNAME_NOT_FOUND = "Пользователь с именем %s не существует";
     private final String USER_NOT_FOUND = "Пользователь %d не найден";
@@ -95,9 +98,8 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         String username = tokenService.getUsername(authorization);
         User user = getUserByUsername(username);
 
-        boolean isOpened = shiftService.isOpened(user.getSalesPoint());
 
-        if (user.getRole() == SELLER && !isOpened) {
+        if (user.getRole() == SELLER && !user.getSalesPoint().isOpened()) {
             throw ErrorException.builder()
                     .message("Ваша смена не открыта")
                     .status(HttpStatus.BAD_REQUEST)

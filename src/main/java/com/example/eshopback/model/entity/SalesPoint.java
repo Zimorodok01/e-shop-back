@@ -2,7 +2,6 @@ package com.example.eshopback.model.entity;
 
 
 import com.example.eshopback.model.entity.audit.AuditModel;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.*;
 
 import javax.persistence.*;
@@ -31,4 +30,7 @@ public class SalesPoint extends AuditModel {
             orphanRemoval = true
     )
     private List<User> employees = new ArrayList<>();
+
+    @Column(columnDefinition = "boolean default false")
+    private boolean isOpened = false;
 }
