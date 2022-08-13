@@ -5,10 +5,10 @@ import com.example.eshopback.model.exception.ErrorException;
 import com.example.eshopback.model.request.PositionRequest;
 import com.example.eshopback.model.response.RemainResponse;
 import com.example.eshopback.repository.RemainRepository;
+import com.example.eshopback.repository.WriteOffOrderRepository;
 import com.example.eshopback.service.ProductService;
 import com.example.eshopback.service.RemainService;
 import com.example.eshopback.service.SalesPointService;
-import com.example.eshopback.service.WriteOffService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.I_AM_A_TEAPOT;
 
 @Service
@@ -24,7 +25,7 @@ public class RemainServiceImpl implements RemainService {
     private final RemainRepository remainRepository;
     private final ProductService productService;
     private final SalesPointService salesPointService;
-    private final WriteOffService writeOffService;
+    private final WriteOffOrderRepository writeOffOrderRepository;
 
     private final String NO_PRODUCT_IN_STOCK = "%s нету в складе";
     private final String DOES_NOT_HAVE_ENOUGH = "%s не хватает в складе";
@@ -42,19 +43,19 @@ public class RemainServiceImpl implements RemainService {
     }
 
     @Override
-    public void writeOff(List<PositionRequest> products, SalesPoint salesPoint) {
+    public void writeOffOrder(List<PositionRequest> products, SalesPoint salesPoint) {
         for (PositionRequest positionRequest : products) {
-            Remain remain = getRemainByProductAndSalesPoint(positionRequest.getProduct(), salesPoint);;
+            Remain remain = getRemainByProductAndSalesPoint(positionRequest.getProduct(), salesPoint);
             remain.setAmount(remain.getAmount() - positionRequest.getAmount());
             remainRepository.save(remain);
 
-            WriteOff writeOff = WriteOff.builder()
+            WriteOffOrder writeOff = WriteOffOrder.builder()
                     .productName(remain.getProduct().getName())
                     .amount(positionRequest.getAmount())
                     .product(remain.getProduct())
                     .salesPoint(salesPoint)
                     .build();
-            writeOffService.save(writeOff);
+            writeOffOrderRepository.save(writeOff);
         }
     }
 
@@ -133,5 +134,27 @@ public class RemainServiceImpl implements RemainService {
                         .productPrice(remain.getProduct().getPrice())
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void writeOff(Product product, SalesPoint salesPoint, int amount) {
+        Optional<Remain> remainOptional = remainRepository.findBySalesPointAndProduct(salesPoint, product);
+
+        if (!remainOptional.isPresent()) {
+            throw ErrorException.builder()
+                    .status(BAD_REQUEST)
+                    .message(String.format(NO_PRODUCT_IN_STOCK, product.getName()))
+                    .build();
+        }
+
+        Remain remain = remainOptional.get();
+        if (remain.getAmount() < amount) {
+            throw ErrorException.builder()
+                    .message(String.format(DOES_NOT_HAVE_ENOUGH, remain.getProduct().getName()))
+                    .build();
+        }
+
+        remain.setAmount(remain.getAmount() - amount);
+        remainRepository.save(remain);
     }
 }

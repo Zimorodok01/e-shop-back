@@ -1,6 +1,8 @@
 package com.example.eshopback.model.entity;
 
 import com.example.eshopback.model.entity.audit.AuditModel;
+import com.example.eshopback.model.enums.DocumentType;
+import com.example.eshopback.model.enums.NDSType;
 import lombok.*;
 
 import javax.persistence.*;
@@ -19,12 +21,20 @@ public class Supply extends AuditModel {
     private Long id;
 
     @OneToOne
+    @JoinColumn(name = "supplier_id")
+    private Supplier supplier;
+
+    private DocumentType documentType;
+
+    @OneToOne
     @JoinColumn(name = "sales_point_id")
     private SalesPoint salesPoint;
 
     @OneToOne
     @JoinColumn(name = "product_id")
     private Product product;
+
+    private NDSType ndsType;
 
     private int amount;
     @Builder.Default

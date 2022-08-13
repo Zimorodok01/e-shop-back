@@ -73,7 +73,7 @@ public class OrderServiceImpl implements OrderService {
         }
 
         //Write off
-        remainService.writeOff(products, salesPoint);
+        remainService.writeOffOrder(products, salesPoint);
     }
 
     @Override

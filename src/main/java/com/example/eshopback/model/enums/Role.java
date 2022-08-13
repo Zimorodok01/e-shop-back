@@ -22,9 +22,7 @@ public enum Role {
             PRODUCT_WRITE,
             PRODUCT_READ,
             ORDER_CREATE,
-            ORDER_READ,
-            SUPPLY_READ,
-            SUPPLY_WRITE
+            ORDER_READ
     )),
     SELLER(Sets.newHashSet(
             PRODUCT_READ,

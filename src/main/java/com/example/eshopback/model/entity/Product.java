@@ -5,6 +5,8 @@ import com.example.eshopback.model.enums.ProductType;
 import lombok.*;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "products")

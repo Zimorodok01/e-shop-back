@@ -6,12 +6,12 @@ import lombok.*;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "product_write_offs")
+@Table(name = "order_write_offs")
 @Getter@Setter
 @AllArgsConstructor
 @Builder
 @NoArgsConstructor
-public class WriteOff extends AuditModel {
+public class WriteOffOrder extends AuditModel {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "writeOff_seq")
     @SequenceGenerator(name = "writeOff_seq", sequenceName = "writeOff_seq", allocationSize = 1)
@@ -29,6 +29,4 @@ public class WriteOff extends AuditModel {
     private SalesPoint salesPoint;
 
     private int amount;
-    private String cause;
-    private String comments;
 }

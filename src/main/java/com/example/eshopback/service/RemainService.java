@@ -11,7 +11,7 @@ import java.util.List;
 public interface RemainService {
     void checkOrder(List<PositionRequest> positions, SalesPoint salesPoint);
 
-    void writeOff(List<PositionRequest> products, SalesPoint salesPoint);
+    void writeOffOrder(List<PositionRequest> products, SalesPoint salesPoint);
 
     void addProduct(Product product);
 
@@ -20,4 +20,6 @@ public interface RemainService {
     List<RemainResponse> getRemains(Long salesPointId);
 
     List<RemainResponse> getRemainsByProductName(String productName, Long salesPoint);
+
+    void writeOff(Product product, SalesPoint salesPoint, int amount);
 }

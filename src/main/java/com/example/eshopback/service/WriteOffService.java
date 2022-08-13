@@ -1,7 +1,13 @@
 package com.example.eshopback.service;
 
-import com.example.eshopback.model.entity.WriteOff;
+import com.example.eshopback.model.entity.WriteOffOrder;
+import com.example.eshopback.model.request.WriteOffRequest;
+import com.example.eshopback.model.response.WriteOffResponse;
+
+import java.util.List;
 
 public interface WriteOffService {
-    void save(WriteOff writeOff);
+    void writeOff(List<WriteOffRequest> writeOffRequests, Long salesPoint);
+
+    List<WriteOffResponse> getWriteOffs(Long salesPoint);
 }

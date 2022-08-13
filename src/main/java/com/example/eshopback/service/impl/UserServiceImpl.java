@@ -98,14 +98,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         String username = tokenService.getUsername(authorization);
         User user = getUserByUsername(username);
 
-
-        if (user.getRole() == SELLER && !user.getSalesPoint().isOpened()) {
-            throw ErrorException.builder()
-                    .message("Ваша смена не открыта")
-                    .status(HttpStatus.BAD_REQUEST)
-                    .build();
-        }
-
         UserResponse userResponse = modelMapper.map(user, UserResponse.class);
 
         userResponse.setSalePoint(modelMapper.map(user.getSalesPoint(), SalePointResponse.class));
