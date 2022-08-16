@@ -9,13 +9,11 @@ import lombok.*;
 @NoArgsConstructor
 @Setter
 @ToString
-public class UserResponse {
+public class EmployeeResponse {
     private Long id;
-    private String firstName;
-    private String lastName;
+    private String name;
     private String username;
-    private Role role;
+    private String role;
     private String email;
     private String phone;
-    private SalePointResponse salePoint;
 }

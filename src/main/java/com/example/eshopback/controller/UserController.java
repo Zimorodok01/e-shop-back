@@ -43,4 +43,10 @@ public class UserController {
         log.info("userInfo" + userInfo);
         return ok(userInfo);
     }
+
+    @GetMapping("/employees")
+    @PreAuthorize("hasAuthority('ROLE_MANAGER')")
+    public ResponseEntity<?> getEmployees(@RequestParam Long salesPoint) {
+        return ok(userService.getEmployees(salesPoint));
+    }
 }

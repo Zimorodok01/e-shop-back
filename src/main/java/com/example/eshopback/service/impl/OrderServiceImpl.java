@@ -4,13 +4,11 @@ import com.example.eshopback.model.entity.Order;
 import com.example.eshopback.model.entity.Position;
 import com.example.eshopback.model.entity.Product;
 import com.example.eshopback.model.entity.SalesPoint;
+import com.example.eshopback.model.enums.PaymentType;
 import com.example.eshopback.model.exception.ErrorException;
 import com.example.eshopback.model.request.OrderRequest;
 import com.example.eshopback.model.request.PositionRequest;
-import com.example.eshopback.model.response.HourlyRevenueResponse;
-import com.example.eshopback.model.response.OrderResponse;
-import com.example.eshopback.model.response.PositionResponse;
-import com.example.eshopback.model.response.RevenueResponse;
+import com.example.eshopback.model.response.*;
 import com.example.eshopback.repository.OrderRepository;
 import com.example.eshopback.repository.PositionRepository;
 import com.example.eshopback.service.*;
@@ -18,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,6 +34,7 @@ public class OrderServiceImpl implements OrderService {
     private final RemainService remainService;
     private final ProductService productService;
     private final PositionRepository positionRepository;
+    private final long DAY_IN_MS = 1000 * 60 * 60 * 24;
 
     @Override
     public void createOrder(OrderRequest orderRequest) {
@@ -151,7 +152,6 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private List<Order> getWeekAgoOrder(Long salesPointId) {
-        long DAY_IN_MS = 1000 * 60 * 60 * 24;
         Date firstDate = new Date(System.currentTimeMillis() - (7 * DAY_IN_MS));
         Date secondDate = new Date(System.currentTimeMillis() - (6 * DAY_IN_MS));
 
@@ -211,5 +211,57 @@ public class OrderServiceImpl implements OrderService {
         SalesPoint salesPoint = salesPointService.getSalesPoint(salesPointId);
 
         return orderRepository.findByCreatedAtAfterAndSalesPointAndDeletedAtNull(calendar.getTime(), salesPoint);
+    }
+
+    @Override
+    public List<OrderReportResponse> getReports(Optional<String> dateOptional, Long salesPointId, Optional<PaymentType> paymentTypeOptional) {
+        SalesPoint salesPoint = salesPointService.getSalesPoint(salesPointId);
+
+        if (!dateOptional.isPresent() && !paymentTypeOptional.isPresent()) {
+            return orderRepository.findBySalesPointAndDeletedAtNull(salesPoint).parallelStream().map(order -> OrderReportResponse.builder()
+                    .orderId(order.getId())
+                    .orderSum(order.getSum())
+                    .paymentType(order.getPaymentType())
+                    .build()).collect(Collectors.toList());
+        }
+
+        if (!dateOptional.isPresent()) {
+            return orderRepository.findBySalesPointAndPaymentTypeAndDeletedAtNull(salesPoint, paymentTypeOptional.get())
+                    .parallelStream().map(order -> OrderReportResponse.builder()
+                            .orderId(order.getId())
+                            .orderSum(order.getSum())
+                            .paymentType(order.getPaymentType())
+                            .build()).collect(Collectors.toList());
+        }
+
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yy");
+        String orderDate = dateOptional.get();
+        Date dateBegin;
+        Date dateEnd;
+        try {
+             dateBegin = simpleDateFormat.parse(orderDate);
+             dateEnd = new Date(dateBegin.getTime() + DAY_IN_MS);
+        } catch (ParseException e) {
+            throw ErrorException.builder()
+                    .message("Формат даты неправильная, должен быть как 13.08.22")
+                    .status(HttpStatus.BAD_REQUEST)
+                    .build();
+        }
+        if (!paymentTypeOptional.isPresent()) {
+            return orderRepository.findBySalesPointAndCreatedAtBetweenAndDeletedAtNull(salesPoint, dateBegin, dateEnd)
+                    .parallelStream().map(order -> OrderReportResponse.builder()
+                            .orderId(order.getId())
+                            .orderSum(order.getSum())
+                            .paymentType(order.getPaymentType())
+                            .build()).collect(Collectors.toList());
+        }
+        PaymentType paymentType = paymentTypeOptional.get();
+        return orderRepository.findBySalesPointAndPaymentTypeAndCreatedAtBetweenAndDeletedAtNull(salesPoint,
+                        paymentType, dateBegin, dateEnd)
+                .parallelStream().map(order -> OrderReportResponse.builder()
+                        .orderId(order.getId())
+                        .orderSum(order.getSum())
+                        .paymentType(order.getPaymentType())
+                        .build()).collect(Collectors.toList());
     }
 }

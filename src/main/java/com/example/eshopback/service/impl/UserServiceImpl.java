@@ -1,20 +1,19 @@
 package com.example.eshopback.service.impl;
 
+import com.example.eshopback.model.entity.SalesPoint;
 import com.example.eshopback.model.entity.User;
+import com.example.eshopback.model.enums.Role;
 import com.example.eshopback.model.exception.ErrorException;
 import com.example.eshopback.model.request.UserRequest;
+import com.example.eshopback.model.response.EmployeeResponse;
 import com.example.eshopback.model.response.SalePointResponse;
 import com.example.eshopback.model.response.UserResponse;
+import com.example.eshopback.repository.SalesPointRepository;
 import com.example.eshopback.repository.UserRepository;
-import com.example.eshopback.service.ShiftService;
 import com.example.eshopback.service.TokenService;
 import com.example.eshopback.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -22,9 +21,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
-import static com.example.eshopback.model.enums.Role.SELLER;
 
 @Service
 @RequiredArgsConstructor
@@ -33,10 +33,10 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     private final PasswordEncoder passwordEncoder;
     private final TokenService tokenService;
     private final ModelMapper modelMapper;
+    private final SalesPointRepository salesPointRepository;
 
     private final String USERNAME_NOT_FOUND = "Пользователь с именем %s не существует";
     private final String USER_NOT_FOUND = "Пользователь %d не найден";
-    private final String USERNAME_EXIST = "Пользователь с именем %s существует";
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -78,7 +78,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         if (optionalUser.isPresent()) {
             throw ErrorException.builder()
                     .status(HttpStatus.BAD_REQUEST)
-                    .message(String.format(USERNAME_EXIST, userRequest.getUsername()))
+                    .message(String.format("Пользователь с именем %s существует", userRequest.getUsername()))
                     .build();
         }
 
@@ -103,5 +103,36 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         userResponse.setSalePoint(modelMapper.map(user.getSalesPoint(), SalePointResponse.class));
 
         return userResponse;
+    }
+
+    @Override
+    public List<EmployeeResponse> getEmployees(Long salesPointId) {
+        SalesPoint salesPoint = salesPointRepository.findById(salesPointId)
+                .orElseThrow(() -> ErrorException.builder()
+                        .status(HttpStatus.BAD_REQUEST)
+                        .message("Торговая точка не существует")
+                        .build());
+
+
+        return userRepository.findBySalesPointAndDeletedAtNull(salesPoint).parallelStream()
+                .map(user -> EmployeeResponse.builder()
+                        .id(user.getId())
+                        .name(user.getFirstName() + " " + user.getLastName())
+                        .phone(user.getPhone())
+                        .username(user.getUsername())
+                        .email(user.getEmail())
+                        .role(getRole(user.getRole()))
+                        .build()).collect(Collectors.toList());
+    }
+
+    private String getRole(Role role) {
+        switch (role) {
+            case SELLER: return "Продавец";
+            case MANAGER: return "Менеджер";
+            default: throw ErrorException.builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .message("Неправильная роль " + role)
+                    .build();
+        }
     }
 }

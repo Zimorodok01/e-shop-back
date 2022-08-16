@@ -29,6 +29,8 @@ public class User extends AuditModel implements UserDetails {
     private Long id;
     private String firstName;
     private String lastName;
+    private String email;
+    private String phone;
 
     @Column(unique = true)
     private String username;
