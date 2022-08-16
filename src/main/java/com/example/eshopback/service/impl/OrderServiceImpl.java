@@ -34,7 +34,6 @@ public class OrderServiceImpl implements OrderService {
     private final RemainService remainService;
     private final ProductService productService;
     private final PositionRepository positionRepository;
-    private final long DAY_IN_MS = 1000 * 60 * 60 * 24;
 
     @Override
     public void createOrder(OrderRequest orderRequest) {
@@ -83,25 +82,7 @@ public class OrderServiceImpl implements OrderService {
         List<OrderResponse> orderResponses = new LinkedList<>();
 
         for (Order order : orders) {
-            List<PositionResponse> positions = positionRepository.findByOrder(order).parallelStream()
-                    .map(position -> PositionResponse.builder()
-                            .productName(position.getProduct().getName())
-                            .price(position.getProduct().getPrice())
-                            .amount(position.getAmount())
-                            .productType(position.getProduct().getType())
-                            .build())
-                    .collect(Collectors.toList());
-
-            OrderResponse orderResponse = OrderResponse.builder()
-                    .id(order.getId())
-                    .salesPoint(order.getSalesPoint().getId())
-                    .clientName(order.getClientName())
-                    .cashier(order.getCashier().getFirstName())
-                    .sum(order.getSum())
-                    .paymentSum(order.getPaymentSum())
-                    .paymentType(order.getPaymentType())
-                    .positions(positions)
-                    .build();
+            OrderResponse orderResponse = getPositions(order);
             orderResponses.add(orderResponse);
         }
 
@@ -125,58 +106,34 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public RevenueResponse getRevenues(Long salesPointId) {
         List<Order> todayOrders = getTodayOrders(salesPointId);
-        List<Order> weeklyOrders = getWeeklyOrders(salesPointId);
-        List<Order> weekAgoOrders = getWeekAgoOrder(salesPointId);
 
         double todaySum = todayOrders.parallelStream().mapToDouble(Order::getSum).sum();
-        double weeklySum = weeklyOrders.parallelStream().mapToDouble(Order::getSum).sum();
 
         int todayAmount = todayOrders.size();
-        int todayCash = (int) todayOrders.parallelStream()
+        int cash = (int) todayOrders.parallelStream()
                 .filter(order -> order.getPaymentType() == CASH).count();
-        int todayElectroic = (int) todayOrders.parallelStream()
+        int electronic = (int) todayOrders.parallelStream()
                 .filter(order -> order.getPaymentType() ==ELECTRONIC).count();
+        double cashSum = todayOrders.parallelStream().filter(order -> order.getPaymentType() == CASH)
+                .mapToDouble(Order::getSum).sum();
+        double electronicSum = todayOrders.parallelStream().filter(order -> order.getPaymentType() == ELECTRONIC)
+                .mapToDouble(Order::getSum).sum();
 
         List<HourlyRevenueResponse> todayHourlyOrders = getHourlyOrders(todayOrders);
-        List<HourlyRevenueResponse> weekAgoHourlyOrders = getHourlyOrders(weekAgoOrders);
 
         return RevenueResponse.builder()
                 .todaySum(todaySum)
-                .weeklySum(weeklySum)
                 .todayAmount(todayAmount)
-                .todayCash(todayCash)
-                .todayElectronic(todayElectroic)
+                .todayCash(cash)
+                .todayElectronic(electronic)
+                .todayCashSum(cashSum)
+                .todayElectronicSum(electronicSum)
                 .todayOrders(todayHourlyOrders)
-                .weekAgoOrders(weekAgoHourlyOrders)
                 .build();
     }
 
-    private List<Order> getWeekAgoOrder(Long salesPointId) {
-        Date firstDate = new Date(System.currentTimeMillis() - (7 * DAY_IN_MS));
-        Date secondDate = new Date(System.currentTimeMillis() - (6 * DAY_IN_MS));
-
-        Calendar calendar = getInstance();
-        calendar.setTime(firstDate);
-        calendar.set(HOUR_OF_DAY, 0);
-        calendar.set(MINUTE, 0);
-        calendar.set(SECOND, 0);
-        calendar.set(MILLISECOND, 0);
-        firstDate = calendar.getTime();
-
-        calendar.setTime(secondDate);
-        calendar.set(HOUR_OF_DAY, 0);
-        calendar.set(MINUTE, 0);
-        calendar.set(SECOND, 0);
-        calendar.set(MILLISECOND, 0);
-        secondDate = calendar.getTime();
-
-        SalesPoint salesPoint = salesPointService.getSalesPoint(salesPointId);
-
-        return orderRepository.findBySalesPointAndCreatedAtBetweenAndDeletedAtNull(salesPoint, firstDate, secondDate);
-    }
-
     private List<HourlyRevenueResponse> getHourlyOrders(List<Order> orders) {
-        Map<String, Double> map = new HashMap<>();
+        Map<String, HourlyRevenueResponse> map = new HashMap<>();
 
         for (Order order : orders) {
             Date date = order.getCreatedAt();
@@ -185,33 +142,19 @@ public class OrderServiceImpl implements OrderService {
             calendar.setTime(date);
 
             String hour = calendar.get(HOUR_OF_DAY) + ":00";
+            HourlyRevenueResponse response;
             if (map.containsKey(hour)) {
-                map.put(hour, map.get(hour) + 1);
+                response = map.get(hour);
+                response.setRevenueSum(response.getRevenueSum() + order.getSum());
             } else {
-                map.put(hour, 1.0);
+                response = new HourlyRevenueResponse(hour, 1, order.getSum());
             }
+            map.put(hour, response);
         }
 
-        return map.entrySet().parallelStream().map(entry -> new HourlyRevenueResponse(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList());
+        return new ArrayList<>(map.values());
     }
 
-    private List<Order> getWeeklyOrders(Long salesPointId) {
-        long DAY_IN_MS = 1000 * 60 * 60 * 24;
-        Date date = new Date(System.currentTimeMillis() - (7 * DAY_IN_MS));
-
-        Calendar calendar = getInstance();
-        calendar.setTime(date);
-        calendar.set(HOUR_OF_DAY, 0);
-        calendar.set(MINUTE, 0);
-        calendar.set(SECOND, 0);
-        calendar.set(MILLISECOND, 0);
-
-
-        SalesPoint salesPoint = salesPointService.getSalesPoint(salesPointId);
-
-        return orderRepository.findByCreatedAtAfterAndSalesPointAndDeletedAtNull(calendar.getTime(), salesPoint);
-    }
 
     @Override
     public List<OrderReportResponse> getReports(Optional<String> dateOptional, Long salesPointId, Optional<PaymentType> paymentTypeOptional) {
@@ -240,7 +183,8 @@ public class OrderServiceImpl implements OrderService {
         Date dateEnd;
         try {
              dateBegin = simpleDateFormat.parse(orderDate);
-             dateEnd = new Date(dateBegin.getTime() + DAY_IN_MS);
+            long DAY_IN_MS = 1000 * 60 * 60 * 24;
+            dateEnd = new Date(dateBegin.getTime() + DAY_IN_MS);
         } catch (ParseException e) {
             throw ErrorException.builder()
                     .message("Формат даты неправильная, должен быть как 13.08.22")
@@ -263,5 +207,42 @@ public class OrderServiceImpl implements OrderService {
                         .orderSum(order.getSum())
                         .paymentType(order.getPaymentType())
                         .build()).collect(Collectors.toList());
+    }
+
+    @Override
+    public OrderResponse getOrderView(Long orderId) {
+        Order order = getOrder(orderId);
+
+        return getPositions(order);
+    }
+
+    private OrderResponse getPositions(Order order) {
+        List<PositionResponse> positions = positionRepository.findByOrder(order).parallelStream()
+                .map(position -> PositionResponse.builder()
+                        .productName(position.getProduct().getName())
+                        .price(position.getProduct().getPrice())
+                        .amount(position.getAmount())
+                        .productType(position.getProduct().getType())
+                        .build())
+                .collect(Collectors.toList());
+
+        return OrderResponse.builder()
+                .id(order.getId())
+                .salesPoint(order.getSalesPoint().getId())
+                .clientName(order.getClientName())
+                .cashier(order.getCashier().getFirstName())
+                .sum(order.getSum())
+                .paymentSum(order.getPaymentSum())
+                .paymentType(order.getPaymentType())
+                .positions(positions)
+                .build();
+    }
+
+    private Order getOrder(Long orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> ErrorException.builder()
+                        .status(HttpStatus.BAD_REQUEST)
+                        .message("Заказ не найден")
+                        .build());
     }
 }

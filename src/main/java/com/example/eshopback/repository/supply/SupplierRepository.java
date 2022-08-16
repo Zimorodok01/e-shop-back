@@ -1,4 +1,4 @@
-package com.example.eshopback.repository;
+package com.example.eshopback.repository.supply;
 
 import com.example.eshopback.model.entity.Supplier;
 import org.springframework.data.jpa.repository.JpaRepository;

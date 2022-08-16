@@ -2,6 +2,7 @@ package com.example.eshopback.service;
 
 import com.example.eshopback.model.enums.PaymentType;
 import com.example.eshopback.model.request.OrderRequest;
+import com.example.eshopback.model.response.OrderReportResponse;
 import com.example.eshopback.model.response.OrderResponse;
 import com.example.eshopback.model.response.RevenueResponse;
 
@@ -15,5 +16,7 @@ public interface OrderService {
 
     RevenueResponse getRevenues(Long salesPoint);
 
-    Object getReports(Optional<String> dateOptional, Long salesPointId, Optional<PaymentType> paymentTypeOptional);
+    List<OrderReportResponse> getReports(Optional<String> dateOptional, Long salesPointId, Optional<PaymentType> paymentTypeOptional);
+
+    OrderResponse getOrderView(Long orderId);
 }

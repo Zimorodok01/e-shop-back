@@ -10,4 +10,5 @@ import lombok.Setter;
 public class HourlyRevenueResponse {
     private String hour;
     private double orderSum;
+    private double revenueSum;
 }

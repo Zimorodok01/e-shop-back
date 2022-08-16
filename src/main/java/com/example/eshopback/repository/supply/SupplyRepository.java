@@ -1,4 +1,4 @@
-package com.example.eshopback.repository;
+package com.example.eshopback.repository.supply;
 
 import com.example.eshopback.model.entity.SalesPoint;
 import com.example.eshopback.model.entity.Supply;

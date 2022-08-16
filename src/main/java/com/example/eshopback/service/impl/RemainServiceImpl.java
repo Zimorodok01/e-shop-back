@@ -6,6 +6,7 @@ import com.example.eshopback.model.request.PositionRequest;
 import com.example.eshopback.model.response.RemainResponse;
 import com.example.eshopback.repository.RemainRepository;
 import com.example.eshopback.repository.WriteOffOrderRepository;
+import com.example.eshopback.repository.supply.SupplyPositionRepository;
 import com.example.eshopback.service.ProductService;
 import com.example.eshopback.service.RemainService;
 import com.example.eshopback.service.SalesPointService;
@@ -26,6 +27,7 @@ public class RemainServiceImpl implements RemainService {
     private final ProductService productService;
     private final SalesPointService salesPointService;
     private final WriteOffOrderRepository writeOffOrderRepository;
+    private final SupplyPositionRepository supplyPositionRepository;
 
     private final String NO_PRODUCT_IN_STOCK = "%s нету в складе";
     private final String DOES_NOT_HAVE_ENOUGH = "%s не хватает в складе";
@@ -89,22 +91,25 @@ public class RemainServiceImpl implements RemainService {
 
     @Override
     public void getRemainBySalesPointAndProduct(Supply supply) {
-        Optional<Remain> remainOptional =
-                remainRepository.findBySalesPointAndProduct(supply.getSalesPoint(), supply.getProduct());
+        List<SupplyPosition> positions = supplyPositionRepository.findBySupplyAndDeletedAtNull(supply);
+        for (SupplyPosition position : positions) {
+            Optional<Remain> remainOptional =
+                    remainRepository.findBySalesPointAndProduct(supply.getSalesPoint(), position.getProduct());
 
-        Remain remain;
-        if (remainOptional.isPresent()) {
-            remain = remainOptional.get();
-            remain.setAmount(supply.getAmount());
-        } else {
-            remain = Remain.builder()
-                    .amount(supply.getAmount())
-                    .product(supply.getProduct())
-                    .salesPoint(supply.getSalesPoint())
-                    .build();
+            Remain remain;
+            if (remainOptional.isPresent()) {
+                remain = remainOptional.get();
+                remain.setAmount(position.getAmount());
+            } else {
+                remain = Remain.builder()
+                        .amount(position.getAmount())
+                        .product(position.getProduct())
+                        .salesPoint(supply.getSalesPoint())
+                        .build();
+            }
+
+            remainRepository.save(remain);
         }
-
-        remainRepository.save(remain);
     }
 
     @Override

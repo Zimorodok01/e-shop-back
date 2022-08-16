@@ -47,4 +47,10 @@ public class OrderController {
                                         @RequestParam Optional<PaymentType> paymentType) {
         return ok(orderService.getReports(date, salesPoint, paymentType));
     }
+
+    @GetMapping("/{orderId}")
+    @PreAuthorize("hasAuthority('ORDER_READ')")
+    public ResponseEntity<?> getOrder(@PathVariable Long orderId) {
+        return ok(orderService.getOrderView(orderId));
+    }
 }
